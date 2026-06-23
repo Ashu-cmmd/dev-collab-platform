@@ -1,11 +1,11 @@
-import User from "../models/User";
+import User from "../models/User.js";
 
 
-export const regiterUser = async ({ name, email, password }) => {
+export const registerUser = async ({ name, email, password }) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-        const error = new Error("User already exists with this emial");
+        const error = new Error("User already exists with this email");
         error.statusCode = 400;
         throw error
     }
