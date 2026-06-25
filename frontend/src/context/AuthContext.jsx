@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useEffect } from "react";
 import { loginUser, registerUser } from "../api/api.js";
 

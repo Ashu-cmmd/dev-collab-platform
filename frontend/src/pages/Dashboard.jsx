@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth.js";
-import { getProjects, createProject } from "../api/api.js";
+import { getProjects, createProject, deleteProject } from "../api/api.js";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -37,6 +37,16 @@ const Dashboard = () => {
       fetchProjects();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create project");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    try {
+      await deleteProject(id);
+      fetchProjects();
+    } catch (err) {
+      setError("Failed to delete project");
     }
   };
 
@@ -89,6 +99,22 @@ const Dashboard = () => {
               <p style={styles.meta}>
                 By {project.owner?.name} · Status: {project.status}
               </p>
+              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                <button
+                  style={styles.chatBtn}
+                  onClick={() => navigate(`/chat/${project._id}`)}
+                >
+                  Open Chat →
+                </button>
+                {project.owner?._id === user?._id && (
+                  <button
+                    style={styles.deleteBtn}
+                    onClick={() => handleDelete(project._id)}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -108,6 +134,8 @@ const styles = {
   logoutBtn: { padding: "0.5rem 1rem", background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" },
   card: { background: "#1e1e2e", padding: "1rem", borderRadius: "8px", marginBottom: "1rem", borderLeft: "3px solid #7c3aed" },
   meta: { color: "#888", fontSize: "0.85rem" },
+  chatBtn: { padding: "0.4rem 0.8rem", background: "#7c3aed", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem" },
+  deleteBtn: { padding: "0.4rem 0.8rem", background: "#ef4444", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem" },
   error: { color: "#f87171" },
 };
 

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../pages/LoginPage.jsx";
 import RegisterPage from "../pages/RegisterPage.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
+import ChatPage from "../pages/ChatPage.jsx";
 import useAuth from "../hooks/useAuth.js";
 
 const ProtectedRoute = ({ children }) => {
@@ -20,6 +21,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat/:projectId"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
           </ProtectedRoute>
         }
       />
