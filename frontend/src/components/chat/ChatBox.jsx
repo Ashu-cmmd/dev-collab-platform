@@ -25,10 +25,10 @@ const ChatBox = ({ projectId }) => {
     loadHistory();
 
     // Connect socket
-    socket = io("http://localhost:5000", {
+    socket = io(import.meta.env.VITE_SOCKET_URL || "https://dev-collab-platform-bx9e.onrender.com", {
       auth: { token: user.token },
     });
-
+    
     socket.on("connect", () => {
       setConnected(true);
       socket.emit("join_room", projectId);
