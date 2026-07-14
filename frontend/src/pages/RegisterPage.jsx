@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useAuth from "../hooks/useAuth.js";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 const features = [
   {
@@ -31,6 +32,7 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,6 +130,22 @@ const RegisterPage = () => {
               </div>
               <button style={styles.btn} type="submit" disabled={loading}>
                 {loading ? "Creating account..." : "Create account"}
+              </button>
+              <button
+                onClick={toggleTheme}
+                style={{
+                  position: "absolute",
+                  top: "1rem",
+                  right: "1rem",
+                  background: "rgba(255,255,255,0.1)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: "8px",
+                  padding: "6px 10px",
+                  cursor: "pointer",
+                  fontSize: "16px",
+                }}
+              >
+                {theme === "dark" ? "☀️" : "🌙"}
               </button>
             </form>
 

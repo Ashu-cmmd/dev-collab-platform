@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import useAuth from "../hooks/useAuth.js";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 const features = [
   {
@@ -34,6 +35,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const { theme, toggleTheme } = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,6 +107,22 @@ const LoginPage = () => {
                 Register
               </button>
             </Link>
+            <button
+              onClick={toggleTheme}
+              style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "8px",
+                padding: "6px 10px",
+                cursor: "pointer",
+                fontSize: "16px",
+              }}
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
           </div>
 
           <div style={styles.formWrap}>
