@@ -11,6 +11,8 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [techStack, setTechStack] = useState("");
+  const [openRoles, setOpenRoles] = useState("");
   const [error, setError] = useState("");
 
   const d = theme === "dark" ? dark : light;
@@ -21,7 +23,7 @@ const Dashboard = () => {
       setProjects(data);
     } catch { setError("Failed to load projects"); }
   };
-  
+
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     fetchProjects();
@@ -30,8 +32,16 @@ const Dashboard = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await createProject({ title, description });
-      setTitle(""); setDescription("");
+      await createProject({
+        title,
+        description,
+        techStack: techStack.split(",").map((t) => t.trim()).filter(Boolean),
+        openRoles: openRoles.split(",").map((r) => r.trim()).filter(Boolean),
+      });
+      setTitle("");
+      setDescription("");
+      setTechStack("");
+      setOpenRoles("");
       fetchProjects();
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create project");
@@ -55,17 +65,11 @@ const Dashboard = () => {
         </div>
         <div style={s.navRight}>
           <span style={{ fontSize: "13px", color: d.textMuted }}>Hi, {user?.name}</span>
-          <button
-            onClick={toggleTheme}
-            style={{ ...s.iconBtn, background: d.cardBg, border: `1px solid ${d.border}`, color: d.text }}
-            title="Toggle theme"
-          >
+          <button onClick={toggleTheme} style={{ ...s.iconBtn, background: d.cardBg, border: `1px solid ${d.border}`, color: d.text }} title="Toggle theme">
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
           <div style={s.avatar}>{user?.name?.[0]?.toUpperCase()}</div>
-          <button onClick={() => { logout(); navigate("/login"); }} style={s.logoutBtn}>
-            Logout
-          </button>
+          <button onClick={() => { logout(); navigate("/login"); }} style={s.logoutBtn}>Logout</button>
         </div>
       </div>
 
@@ -129,20 +133,40 @@ const Dashboard = () => {
           {/* PROJECT GRID */}
           <div style={s.grid}>
             {projects.map((project) => (
-              <div key={project._id} style={{
-                ...s.card,
-                background: d.cardBg,
-                border: `1px solid ${d.border}`,
-                borderLeft: "3px solid #7c3aed",
-              }}>
+              <div key={project._id} style={{ ...s.card, background: d.cardBg, border: `1px solid ${d.border}`, borderLeft: "3px solid #7c3aed" }}>
                 <div style={s.cardTop}>
                   <h4 style={{ fontSize: "14px", fontWeight: 600, color: d.text }}>{project.title}</h4>
                   <span style={{ ...s.badge, background: theme === "dark" ? "rgba(5,150,105,0.15)" : "#ecfdf5", color: "#34d399", border: `1px solid ${theme === "dark" ? "rgba(5,150,105,0.3)" : "#a7f3d0"}` }}>
                     {project.status}
                   </span>
                 </div>
+
                 <p style={{ fontSize: "12px", color: d.textMuted, lineHeight: "1.5" }}>{project.description}</p>
+
+                {/* Tech Stack tags */}
+                {project.techStack?.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                    {project.techStack.map((tech) => (
+                      <span key={tech} style={{ fontSize: "10px", background: theme === "dark" ? "rgba(124,58,237,0.15)" : "#f3f0ff", color: "#a78bfa", border: `1px solid ${theme === "dark" ? "rgba(124,58,237,0.3)" : "#e9d5ff"}`, borderRadius: "5px", padding: "2px 8px" }}>
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Open Roles */}
+                {project.openRoles?.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                    {project.openRoles.map((role) => (
+                      <span key={role} style={{ fontSize: "10px", background: theme === "dark" ? "rgba(5,150,105,0.1)" : "#ecfdf5", color: "#34d399", border: `1px solid ${theme === "dark" ? "rgba(5,150,105,0.25)" : "#a7f3d0"}`, borderRadius: "5px", padding: "2px 8px" }}>
+                        👤 {role}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 <p style={{ fontSize: "11px", color: d.textMuted }}>By {project.owner?.name}</p>
+
                 <div style={s.cardActions}>
                   <button
                     style={{ ...s.chatBtn, background: theme === "dark" ? "rgba(124,58,237,0.2)" : "#f3f0ff", border: `1px solid ${theme === "dark" ? "rgba(124,58,237,0.4)" : "#e9d5ff"}`, color: "#a78bfa" }}
@@ -151,9 +175,7 @@ const Dashboard = () => {
                     Open Chat →
                   </button>
                   {project.owner?._id === user?._id && (
-                    <button style={s.deleteBtn} onClick={() => handleDelete(project._id)}>
-                      Delete
-                    </button>
+                    <button style={s.deleteBtn} onClick={() => handleDelete(project._id)}>Delete</button>
                   )}
                 </div>
               </div>
@@ -174,22 +196,53 @@ const Dashboard = () => {
         <div style={{ ...s.rightPanel, background: d.sidebarBg, borderLeft: `1px solid ${d.border}` }}>
           <span style={{ ...s.sidebarLabel, color: d.textMuted }}>New project</span>
           <form onSubmit={handleCreate} style={s.createForm}>
-            <input
-              id="project-title-input"
-              style={{ ...s.input, background: d.inputBg, border: `1px solid ${d.border}`, color: d.text }}
-              placeholder="Project title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-            <textarea
-              style={{ ...s.input, background: d.inputBg, border: `1px solid ${d.border}`, color: d.text, height: "80px", resize: "vertical" }}
-              placeholder="Describe your project..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-            <button style={s.createBtn} type="submit">+ Create</button>
+
+            <div>
+              <label style={s.fieldLabel(d)}>Title *</label>
+              <input
+                id="project-title-input"
+                style={{ ...s.input, background: d.inputBg, border: `1px solid ${d.border}`, color: d.text }}
+                placeholder="Project title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={s.fieldLabel(d)}>Description *</label>
+              <textarea
+                style={{ ...s.input, background: d.inputBg, border: `1px solid ${d.border}`, color: d.text, height: "70px", resize: "vertical" }}
+                placeholder="What is this project about?"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <label style={s.fieldLabel(d)}>Tech Stack</label>
+              <input
+                style={{ ...s.input, background: d.inputBg, border: `1px solid ${d.border}`, color: d.text }}
+                placeholder="React, Node.js, MongoDB"
+                value={techStack}
+                onChange={(e) => setTechStack(e.target.value)}
+              />
+              <span style={{ fontSize: "10px", color: d.textMuted, marginTop: "3px", display: "block" }}>Separate with commas</span>
+            </div>
+
+            <div>
+              <label style={s.fieldLabel(d)}>Open Roles</label>
+              <input
+                style={{ ...s.input, background: d.inputBg, border: `1px solid ${d.border}`, color: d.text }}
+                placeholder="Frontend Dev, UI Designer"
+                value={openRoles}
+                onChange={(e) => setOpenRoles(e.target.value)}
+              />
+              <span style={{ fontSize: "10px", color: d.textMuted, marginTop: "3px", display: "block" }}>Separate with commas</span>
+            </div>
+
+            <button style={s.createBtn} type="submit">+ Create Project</button>
           </form>
         </div>
 
@@ -248,10 +301,11 @@ const s = {
   cardActions: { display: "flex", gap: "8px", marginTop: "4px" },
   chatBtn: { flex: 1, padding: "6px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 500 },
   deleteBtn: { background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#f87171", borderRadius: "6px", padding: "6px 10px", fontSize: "12px", cursor: "pointer" },
-  rightPanel: { width: "220px", padding: "1.5rem 1rem", flexShrink: 0 },
-  createForm: { display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" },
+  rightPanel: { width: "240px", padding: "1.5rem 1rem", flexShrink: 0, overflowY: "auto" },
+  createForm: { display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" },
   input: { width: "100%", padding: "8px 10px", borderRadius: "7px", fontSize: "12px", outline: "none", boxSizing: "border-box" },
-  createBtn: { background: "#7c3aed", color: "white", border: "none", borderRadius: "7px", padding: "8px", fontSize: "12px", fontWeight: 500, cursor: "pointer", width: "100%" },
+  createBtn: { background: "#7c3aed", color: "white", border: "none", borderRadius: "7px", padding: "9px", fontSize: "12px", fontWeight: 500, cursor: "pointer", width: "100%", marginTop: "4px" },
+  fieldLabel: (d) => ({ fontSize: "10px", fontWeight: 600, color: d.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: "4px" }),
 };
 
 export default Dashboard;
