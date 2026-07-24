@@ -5,7 +5,7 @@ import { getChatHistory } from "../../api/api.js";
 
 let socket;
 
-const ChatBox = ({ projectId }) => {
+const ChatBox = ({ projectId, theme, d }) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -13,7 +13,6 @@ const ChatBox = ({ projectId }) => {
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    // Load chat history first
     const loadHistory = async () => {
       try {
         const { data } = await getChatHistory(projectId);
@@ -24,11 +23,10 @@ const ChatBox = ({ projectId }) => {
     };
     loadHistory();
 
-    // Connect socket
-    socket = io(import.meta.env.VITE_SOCKET_URL || "https://dev-collab-platform-bx9e.onrender.com", {
+    socket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:5000", {
       auth: { token: user.token },
     });
-    
+
     socket.on("connect", () => {
       setConnected(true);
       socket.emit("join_room", projectId);
@@ -42,14 +40,12 @@ const ChatBox = ({ projectId }) => {
       console.error("Socket error:", err.message);
     });
 
-    // Cleanup on unmount
     return () => {
       socket.emit("leave_room", projectId);
       socket.disconnect();
     };
   }, [projectId]);
 
-  // Auto scroll to bottom on new message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -61,75 +57,80 @@ const ChatBox = ({ projectId }) => {
   };
 
   const handleKey = (e) => {
-    if (e.key === "Enter") sendMessage();
+    if (e.key === "Enter" && !e.shiftKey) sendMessage();
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.status}>
-        {connected ? "🟢 Connected" : "🔴 Connecting..."}
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+      {/* Status bar */}
+      <div style={{ padding: "6px 1.5rem", background: connected ? (theme === "dark" ? "rgba(5,150,105,0.1)" : "#ecfdf5") : "rgba(239,68,68,0.1)", borderBottom: `1px solid ${d.border}`, display: "flex", alignItems: "center", gap: "6px" }}>
+        <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: connected ? "#34d399" : "#f87171" }} />
+        <span style={{ fontSize: "12px", color: connected ? "#34d399" : "#f87171" }}>
+          {connected ? "Connected · Socket.io" : "Connecting..."}
+        </span>
       </div>
 
-      <div style={styles.messages}>
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "12px" }}>
         {messages.length === 0 && (
-          <p style={styles.empty}>No messages yet. Say hello!</p>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: "8px" }}>
+            <div style={{ fontSize: "32px" }}>💬</div>
+            <p style={{ fontSize: "14px", color: d.textMuted, fontWeight: 500 }}>No messages yet</p>
+            <p style={{ fontSize: "12px", color: d.textMuted }}>Be the first to say hello!</p>
+          </div>
         )}
+
         {messages.map((msg) => {
           const isMe = msg.sender._id === user._id;
           return (
-            <div
-              key={msg._id}
-              style={{
-                ...styles.message,
-                alignSelf: isMe ? "flex-end" : "flex-start",
-                background: isMe ? "#7c3aed" : "#2a2a3d",
-              }}
-            >
+            <div key={msg._id} style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", gap: "3px" }}>
               {!isMe && (
-                <span style={styles.senderName}>{msg.sender.name}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", paddingLeft: "4px" }}>
+                  <div style={{ width: "20px", height: "20px", background: "#7c3aed", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "9px", fontWeight: 700 }}>
+                    {msg.sender.name?.[0]?.toUpperCase()}
+                  </div>
+                  <span style={{ fontSize: "11px", color: "#a78bfa", fontWeight: 600 }}>{msg.sender.name}</span>
+                </div>
               )}
-              <p style={styles.messageText}>{msg.content}</p>
-              <span style={styles.time}>
-                {new Date(msg.createdAt).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+              <div style={{
+                maxWidth: "65%",
+                padding: "10px 14px",
+                borderRadius: isMe ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                background: isMe ? "#7c3aed" : d.cardBg,
+                border: isMe ? "none" : `1px solid ${d.border}`,
+                color: isMe ? "white" : d.text,
+              }}>
+                <p style={{ fontSize: "14px", lineHeight: "1.5", margin: 0 }}>{msg.content}</p>
+                <p style={{ fontSize: "10px", color: isMe ? "rgba(255,255,255,0.6)" : d.textMuted, margin: "4px 0 0", textAlign: "right" }}>
+                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
             </div>
           );
         })}
         <div ref={bottomRef} />
       </div>
 
-      <div style={styles.inputRow}>
+      {/* Input */}
+      <div style={{ padding: "1rem 1.5rem", borderTop: `1px solid ${d.border}`, background: d.navBg, display: "flex", gap: "10px", alignItems: "flex-end" }}>
         <input
-          style={styles.input}
+          style={{ flex: 1, padding: "10px 14px", background: d.cardBg, border: `1px solid ${d.border}`, borderRadius: "12px", color: d.text, fontSize: "14px", outline: "none" }}
           type="text"
-          placeholder="Type a message..."
+          placeholder="Type a message... (Enter to send)"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKey}
         />
-        <button style={styles.button} onClick={sendMessage}>
+        <button
+          onClick={sendMessage}
+          style={{ padding: "10px 20px", background: "#7c3aed", color: "white", border: "none", borderRadius: "12px", fontSize: "14px", fontWeight: 600, cursor: "pointer", flexShrink: 0 }}
+        >
           Send
         </button>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: { display: "flex", flexDirection: "column", height: "500px", background: "#1e1e2e", borderRadius: "8px", overflow: "hidden" },
-  status: { padding: "0.5rem 1rem", fontSize: "0.8rem", background: "#13131f", borderBottom: "1px solid #333" },
-  messages: { flex: 1, overflowY: "auto", padding: "1rem", display: "flex", flexDirection: "column", gap: "0.5rem" },
-  empty: { color: "#666", textAlign: "center", marginTop: "2rem" },
-  message: { maxWidth: "70%", padding: "0.6rem 1rem", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "0.2rem" },
-  senderName: { fontSize: "0.75rem", color: "#a78bfa", fontWeight: "bold" },
-  messageText: { margin: 0, fontSize: "0.95rem", color: "#fff" },
-  time: { fontSize: "0.7rem", color: "#888", alignSelf: "flex-end" },
-  inputRow: { display: "flex", padding: "0.75rem", gap: "0.5rem", borderTop: "1px solid #333" },
-  input: { flex: 1, padding: "0.6rem 1rem", borderRadius: "4px", border: "1px solid #444", background: "#2a2a3d", color: "#fff", fontSize: "0.95rem" },
-  button: { padding: "0.6rem 1.2rem", background: "#7c3aed", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" },
 };
 
 export default ChatBox;
