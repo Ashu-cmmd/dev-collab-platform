@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 dotenv.config();
 
 import http from "http";
@@ -18,5 +19,14 @@ const startServer = async () => {
     console.log(`Server running on port ${PORT}`);
   });
 };
+
+setInterval(async () => {
+  try {
+    await mongoose.connection.db.admin().ping();
+    console.log("MongoDB keep-alive ping sent");
+  } catch (err) {
+    console.error("Keep-alive ping failed:", err.message);
+  }
+}, 7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
 
 startServer();
